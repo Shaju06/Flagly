@@ -1,7 +1,8 @@
+'use client';
+
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -10,59 +11,262 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { FlagVariationsSelection } from './flag-variations-selections';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import { createFlagSchema } from '@/validations/newflag-schema';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { DialogClose } from '@radix-ui/react-dialog';
+import { Fragment, useEffect, useState } from 'react';
+import {
+  useFieldArray,
+  useForm,
+  useWatch,
+} from 'react-hook-form';
+import EditVariations from './edit-variations';
+import { TextWithTooltip } from './text-with-tooltip';
 
 export function CreateFlagDialog() {
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [index, setIndex] = useState(0);
+  const {
+    register,
+    watch,
+    setValue,
+    handleSubmit,
+    formState: { errors, dirtyFields },
+    control,
+  } = useForm({
+    resolver: zodResolver(createFlagSchema),
+    defaultValues: {
+      name: '',
+      key: '',
+      description: '',
+      type: 'boolean',
+      enabled: false,
+      variants: undefined,
+    },
+  });
+
+  const type = useWatch({ control, name: 'type' });
+  const name = useWatch({ control, name: 'name' });
+  const { fields, append, remove, update, replace } =
+    useFieldArray({
+      control,
+      name: 'variants',
+    });
+
+  const onTypeChange = (
+    type: 'boolean' | 'string' | 'number',
+  ) => {
+    setValue('type', type);
+
+    if (type === 'boolean') {
+      setValue('variants', undefined);
+      return;
+    }
+
+    if (type === 'string') {
+      replace([
+        { name: '', value: 'Variation 1' },
+        { name: '', value: 'Variations 2' },
+      ]);
+    }
+
+    if (type === 'number') {
+      replace([
+        { name: '', value: 1 },
+        { name: '', value: 0 },
+      ]);
+    }
+  };
+
+  const slugify = (value: string) =>
+    value
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '')
+      .replace(/-+/g, '-');
+
+  useEffect(() => {
+    if (!name) return;
+    if (dirtyFields.key) return;
+
+    setValue('key', slugify(name), {
+      shouldDirty: false,
+      shouldTouch: false,
+    });
+  }, [name, dirtyFields.key, setValue]);
+
+  const onSubmit = (data: any) => {
+    console.log('CREATE FLAG:', data);
+  };
+
   return (
-    <Dialog>
-      <form>
+    <div className="bg-card-foreground/5">
+      <Dialog>
         <DialogTrigger asChild>
           <Button>Create new flag</Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[625px]">
+
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Create flag</DialogTitle>
+            <DialogTitle>Create Feature Flag</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-3">
+
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="space-y-4"
+          >
             <div className="grid gap-3">
-              <Label htmlFor="name">
-                Name{''}
-                <span className="text-red-400 text-xl">
-                  *
-                </span>
-              </Label>
-              <Input id="name" name="name" />
-              <Label htmlFor="key">
-                Key{' '}
-                <span className="text-red-400 text-xl">
-                  *
-                </span>
-              </Label>
-              <Input id="key" name="key" />
+              <Label>Name</Label>
+              <Input {...register('name')} />
+              {errors.name && (
+                <p className="text-sm text-destructive">
+                  {errors.name.message}
+                </p>
+              )}
             </div>
+
             <div className="grid gap-3">
-              <Label htmlFor="description">
-                Description
-              </Label>
-              <Input
-                id="description"
-                name="description"
-                defaultValue="@peduarte"
+              <Label>Flag Key</Label>
+              <Input {...register('key')} />
+              {errors.key && (
+                <p className="text-sm text-destructive">
+                  {errors.key.message}
+                </p>
+              )}
+            </div>
+
+            <div className="grid gap-3">
+              <Label>Description</Label>
+              <Textarea {...register('description')} />
+            </div>
+
+            <div className="grid gap-3">
+              <Label>Type</Label>
+              <Select
+                value={type}
+                onValueChange={(v) =>
+                  onTypeChange(
+                    v as 'boolean' | 'string' | 'number',
+                  )
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="boolean">
+                    Boolean
+                  </SelectItem>
+                  <SelectItem value="string">
+                    String
+                  </SelectItem>
+                  <SelectItem value="number">
+                    Number
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+
+              {errors?.variants && (
+                <p className="text-sm text-destructive">
+                  {typeof errors?.variants === 'string'
+                    ? errors.variants
+                    : (errors?.variants as any)?.message ??
+                      String(errors?.variants)}
+                </p>
+              )}
+            </div>
+
+            {type !== 'boolean' && (
+              <div className="space-y-3">
+                <div className="flex grow flex-row flex-wrap gap-2">
+                  {fields.map((field, index) => (
+                    <Fragment key={field.id}>
+                      {' '}
+                      <div
+                        onClick={() => {
+                          setIndex(index);
+                          setIsEditOpen(true);
+                        }}
+                        key={field.id}
+                        className="max-w-3xs truncate gap-2 p-2 border rounded-md flex item-center justify-center cusror-pointer select-none"
+                      >
+                        <TextWithTooltip
+                          text={field?.name || field?.value}
+                          className=""
+                        />
+                      </div>
+                    </Fragment>
+                  ))}
+                  {isEditOpen && (
+                    <EditVariations
+                      index={index}
+                      isOpen={isEditOpen}
+                      data={fields[index]}
+                      update={update}
+                      remove={remove}
+                      type={type}
+                      setIsEditOpen={setIsEditOpen}
+                      isRemove={index >= 2}
+                    />
+                  )}
+                </div>
+                {fields?.length <= 9 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (type === 'string') {
+                        append({
+                          name: '',
+                          value: `variations ${
+                            fields?.length + 1
+                          }`,
+                        });
+                      }
+                      if (type === 'number') {
+                        append({
+                          name: '',
+                          value: fields?.length + 1,
+                        });
+                      }
+                    }}
+                  >
+                    + Add Variant
+                  </Button>
+                )}
+              </div>
+            )}
+
+            <div className="flex items-center justify-between">
+              <Label>Enabled</Label>
+              <Switch
+                checked={watch('enabled')}
+                onCheckedChange={(v) =>
+                  setValue('enabled', v)
+                }
               />
             </div>
-            <div className="grid gap-3">
-              <Label htmlFor="variations">Variations</Label>
-              <FlagVariationsSelection />
-            </div>
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
-            <Button type="submit">Save changes</Button>
-          </DialogFooter>
+
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline">Cancel</Button>
+              </DialogClose>
+              <Button type="submit">Create Flag</Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
-      </form>
-    </Dialog>
+      </Dialog>
+    </div>
   );
 }

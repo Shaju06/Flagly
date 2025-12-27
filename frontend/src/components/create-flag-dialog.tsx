@@ -7,7 +7,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,7 +31,13 @@ import {
 import EditVariations from './edit-variations';
 import { TextWithTooltip } from './text-with-tooltip';
 
-export function CreateFlagDialog() {
+export function CreateFlagDialog({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose?: () => void;
+}) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [index, setIndex] = useState(0);
   const {
@@ -105,168 +110,162 @@ export function CreateFlagDialog() {
     });
   }, [name, dirtyFields.key, setValue]);
 
-  const onSubmit = (data: any) => {
-    console.log('CREATE FLAG:', data);
-  };
+  const onSubmit = (data: any) => {};
+
+  if (!open) return null;
 
   return (
-    <div className="bg-card-foreground/5">
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button>Create new flag</Button>
-        </DialogTrigger>
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Create Feature Flag</DialogTitle>
+        </DialogHeader>
 
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Create Feature Flag</DialogTitle>
-          </DialogHeader>
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="space-y-4"
+        >
+          <div className="grid gap-3">
+            <Label>Name</Label>
+            <Input {...register('name')} />
+            {errors.name && (
+              <p className="text-sm text-destructive">
+                {errors.name.message}
+              </p>
+            )}
+          </div>
 
-          <form
-            onSubmit={handleSubmit(onSubmit)}
-            className="space-y-4"
-          >
-            <div className="grid gap-3">
-              <Label>Name</Label>
-              <Input {...register('name')} />
-              {errors.name && (
-                <p className="text-sm text-destructive">
-                  {errors.name.message}
-                </p>
-              )}
-            </div>
+          <div className="grid gap-3">
+            <Label>Flag Key</Label>
+            <Input {...register('key')} />
+            {errors.key && (
+              <p className="text-sm text-destructive">
+                {errors.key.message}
+              </p>
+            )}
+          </div>
 
-            <div className="grid gap-3">
-              <Label>Flag Key</Label>
-              <Input {...register('key')} />
-              {errors.key && (
-                <p className="text-sm text-destructive">
-                  {errors.key.message}
-                </p>
-              )}
-            </div>
+          <div className="grid gap-3">
+            <Label>Description</Label>
+            <Textarea {...register('description')} />
+          </div>
 
-            <div className="grid gap-3">
-              <Label>Description</Label>
-              <Textarea {...register('description')} />
-            </div>
+          <div className="grid gap-3">
+            <Label>Type</Label>
+            <Select
+              value={type}
+              onValueChange={(v) =>
+                onTypeChange(
+                  v as 'boolean' | 'string' | 'number',
+                )
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="boolean">
+                  Boolean
+                </SelectItem>
+                <SelectItem value="string">
+                  String
+                </SelectItem>
+                <SelectItem value="number">
+                  Number
+                </SelectItem>
+              </SelectContent>
+            </Select>
 
-            <div className="grid gap-3">
-              <Label>Type</Label>
-              <Select
-                value={type}
-                onValueChange={(v) =>
-                  onTypeChange(
-                    v as 'boolean' | 'string' | 'number',
-                  )
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="boolean">
-                    Boolean
-                  </SelectItem>
-                  <SelectItem value="string">
-                    String
-                  </SelectItem>
-                  <SelectItem value="number">
-                    Number
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+            {errors?.variants && (
+              <p className="text-sm text-destructive">
+                {typeof errors?.variants === 'string'
+                  ? errors.variants
+                  : (errors?.variants as any)?.message ??
+                    String(errors?.variants)}
+              </p>
+            )}
+          </div>
 
-              {errors?.variants && (
-                <p className="text-sm text-destructive">
-                  {typeof errors?.variants === 'string'
-                    ? errors.variants
-                    : (errors?.variants as any)?.message ??
-                      String(errors?.variants)}
-                </p>
-              )}
-            </div>
-
-            {type !== 'boolean' && (
-              <div className="space-y-3">
-                <div className="flex grow flex-row flex-wrap gap-2">
-                  {fields.map((field, index) => (
-                    <Fragment key={field.id}>
-                      {' '}
-                      <div
-                        onClick={() => {
-                          setIndex(index);
-                          setIsEditOpen(true);
-                        }}
-                        key={field.id}
-                        className="max-w-3xs truncate gap-2 p-2 border rounded-md flex item-center justify-center cusror-pointer select-none"
-                      >
-                        <TextWithTooltip
-                          text={field?.name || field?.value}
-                          className=""
-                        />
-                      </div>
-                    </Fragment>
-                  ))}
-                  {isEditOpen && (
-                    <EditVariations
-                      index={index}
-                      isOpen={isEditOpen}
-                      data={fields[index]}
-                      update={update}
-                      remove={remove}
-                      type={type}
-                      setIsEditOpen={setIsEditOpen}
-                      isRemove={index >= 2}
-                    />
-                  )}
-                </div>
-                {fields?.length <= 9 && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      if (type === 'string') {
-                        append({
-                          name: '',
-                          value: `variations ${
-                            fields?.length + 1
-                          }`,
-                        });
-                      }
-                      if (type === 'number') {
-                        append({
-                          name: '',
-                          value: fields?.length + 1,
-                        });
-                      }
-                    }}
-                  >
-                    + Add Variant
-                  </Button>
+          {type !== 'boolean' && (
+            <div className="space-y-3">
+              <div className="flex grow flex-row flex-wrap gap-2">
+                {fields.map((field, index) => (
+                  <Fragment key={field.id}>
+                    {' '}
+                    <div
+                      onClick={() => {
+                        setIndex(index);
+                        setIsEditOpen(true);
+                      }}
+                      key={field.id}
+                      className="max-w-3xs truncate gap-2 p-2 border rounded-md flex item-center justify-center cusror-pointer select-none"
+                    >
+                      <TextWithTooltip
+                        text={field?.name || field?.value}
+                        className=""
+                      />
+                    </div>
+                  </Fragment>
+                ))}
+                {isEditOpen && (
+                  <EditVariations
+                    index={index}
+                    isOpen={isEditOpen}
+                    data={fields[index]}
+                    update={update}
+                    remove={remove}
+                    type={type}
+                    setIsEditOpen={setIsEditOpen}
+                    isRemove={index >= 2}
+                  />
                 )}
               </div>
-            )}
-
-            <div className="flex items-center justify-between">
-              <Label>Enabled</Label>
-              <Switch
-                checked={watch('enabled')}
-                onCheckedChange={(v) =>
-                  setValue('enabled', v)
-                }
-              />
+              {fields?.length <= 9 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (type === 'string') {
+                      append({
+                        name: '',
+                        value: `variations ${
+                          fields?.length + 1
+                        }`,
+                      });
+                    }
+                    if (type === 'number') {
+                      append({
+                        name: '',
+                        value: fields?.length + 1,
+                      });
+                    }
+                  }}
+                >
+                  + Add Variant
+                </Button>
+              )}
             </div>
+          )}
 
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline">Cancel</Button>
-              </DialogClose>
-              <Button type="submit">Create Flag</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </div>
+          <div className="flex items-center justify-between">
+            <Label>Enabled</Label>
+            <Switch
+              checked={watch('enabled')}
+              onCheckedChange={(v) =>
+                setValue('enabled', v)
+              }
+            />
+          </div>
+
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button type="submit">Create Flag</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

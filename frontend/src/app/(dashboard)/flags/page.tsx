@@ -49,7 +49,7 @@ const flags = [
   },
   {
     name: 'Price Calculation',
-    key: 'price_calct',
+    key: 'price_calcts',
     type: 'number',
     enabled: true,
     rollout: 100,
@@ -57,7 +57,7 @@ const flags = [
   },
   {
     name: 'New Checkout',
-    key: 'new_checkout',
+    key: 'new_checkoutd',
     type: 'boolean',
     enabled: true,
     rollout: 30,
@@ -65,31 +65,7 @@ const flags = [
   },
   {
     name: 'Dark Mode',
-    key: 'dark_mode',
-    type: 'string',
-    enabled: false,
-    rollout: 0,
-    env: 'dev',
-  },
-  {
-    name: 'Price Calculation',
-    key: 'price_calc',
-    type: 'number',
-    enabled: true,
-    rollout: 100,
-    env: 'prod',
-  },
-  {
-    name: 'New Checkout',
-    key: 'new_checkoutt',
-    type: 'boolean',
-    enabled: true,
-    rollout: 30,
-    env: 'prod',
-  },
-  {
-    name: 'Dark Mode',
-    key: 'dark_modee',
+    key: 'dark_moded',
     type: 'string',
     enabled: false,
     rollout: 0,
@@ -98,6 +74,30 @@ const flags = [
   {
     name: 'Price Calculation',
     key: 'price_calct',
+    type: 'number',
+    enabled: true,
+    rollout: 100,
+    env: 'prod',
+  },
+  {
+    name: 'New Checkout',
+    key: 'new_checkouttt',
+    type: 'boolean',
+    enabled: true,
+    rollout: 30,
+    env: 'prod',
+  },
+  {
+    name: 'Dark Mode',
+    key: 'dark_modeee',
+    type: 'string',
+    enabled: false,
+    rollout: 0,
+    env: 'dev',
+  },
+  {
+    name: 'Price Calculation',
+    key: 'price_calctt',
     type: 'number',
     enabled: true,
     rollout: 100,
@@ -118,7 +118,7 @@ export default function FlagsPage() {
       <h1 className="text-2xl font-semibold">
         Feature Flags
       </h1>
-      {flags.length === 0 ? (
+      {flags.length !== 0 ? (
         <FlagsEmpty onCreate={() => setCreateOpen(true)} />
       ) : (
         <div className="flex-1 overflow-auto pr-4  scrollbar-track-transparent">
